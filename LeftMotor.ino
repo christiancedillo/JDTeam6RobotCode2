@@ -15,7 +15,8 @@ void setupLeftMotor() {
 
 void LeftMotorTask(void *pvParameters) {
   for (;;) {
-    if (!isConnected || abs(leftY) < DEADZONE) {
+    // IN1 = IN2 = LOW with PWM = 0 -> driver output is high-impedance (no current)
+    if (estop || !isConnected || abs(leftY) < DEADZONE) {
       analogWrite(LEFT_PWM, 0);
       digitalWrite(AIN1, LOW);
       digitalWrite(AIN2, LOW);
