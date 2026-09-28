@@ -15,25 +15,22 @@ void setupGripperMotor() {
 
 void GripperMotorTask(void *pvParameters) {
   for (;;) {
-    if (!isConnected) {
+    bool l2Active = l2Trigger > TRIGGER_DEADZONE;
+    bool r2Active = r2Trigger > TRIGGER_DEADZONE;
+
+    // Off if e-stopped, disconnected, or neither/both triggers are pressed
+    if (estop || !isConnected || l2Active == r2Active) {
       analogWrite(Gripper_PWM, 0);
       digitalWrite(CIN1, LOW);
       digitalWrite(CIN2, LOW);
-    } else {
-      if ((l2Trigger > TRIGGER_DEADZONE && r2Trigger > TRIGGER_DEADZONE) ||
-          (l2Trigger < TRIGGER_DEADZONE && r2Trigger < TRIGGER_DEADZONE)) {
-        analogWrite(Gripper_PWM, 0);
-        digitalWrite(CIN1, LOW);
-        digitalWrite(CIN2, LOW);
-      } else if (r2Trigger >= TRIGGER_DEADZONE) {
-        digitalWrite(CIN1, HIGH);
-        digitalWrite(CIN2, LOW);
-        analogWrite(Gripper_PWM, r2Trigger);
-      } else if (l2Trigger >= TRIGGER_DEADZONE) {
-        digitalWrite(CIN1, LOW);
-        digitalWrite(CIN2, HIGH);
-        analogWrite(Gripper_PWM, l2Trigger);
-      }
+    } else if (r2Active) {
+      digitalWrite(CIN1, HIGH);
+      digitalWrite(CIN2, LOW);
+      analogWrite(Gripper_PWM, r2Trigger);
+    } else {  // l2Active
+      digitalWrite(CIN1, LOW);
+      digitalWrite(CIN2, HIGH);
+      analogWrite(Gripper_PWM, l2Trigger);
     }
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
