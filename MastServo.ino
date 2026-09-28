@@ -1,5 +1,5 @@
 Servo mastServo;
-const int SERVO_PIN = 23;
+const int SERVO_PIN = 18;
 
 // 5-turn dual mode servo (1800°): 500 µs = 0°, 2500 µs = 1800° (in servo mode)
 const int SERVO_MIN_US = 500;
