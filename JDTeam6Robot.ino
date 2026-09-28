@@ -31,7 +31,7 @@ void setup() {
   digitalWrite(STBY2, HIGH);
 
   // 4. Initialize Bluetooth (INSERT MAC ADDRESS)
-  PS4.begin("4C:B9:9B:3A:43:B5"); 
+  PS4.begin("DC:0C:2D:56:5C:9F"); 
   Serial.println("Ready. Press PS button to connect...");
 
   // Create 4 independent, concurrent tasks
