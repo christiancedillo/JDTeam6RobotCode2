@@ -1,29 +1,30 @@
-const int AIN1 = 2;
-const int AIN2 = 4;
+// TB6612FNG (1), channel A -> Wheel1Motor
+const int AIN1 = 14;      // D14
+const int AIN2 = 27;      // D27
+const int LEFT_PWM = 19;  // PWMA -> D19
 const int DEADZONE = 15;
 
 void setupLeftMotor() {
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
-  analogWrite(AIN1, 0); 
-  analogWrite(AIN2, 0);
+  pinMode(LEFT_PWM, OUTPUT);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  analogWrite(LEFT_PWM, 0);
 }
 
 void LeftMotorTask(void *pvParameters) {
-  for (;;) { 
+  for (;;) {
     if (!isConnected || abs(leftY) < DEADZONE) {
-      analogWrite(AIN1, 0); 
-      analogWrite(AIN2, 0);
+      analogWrite(LEFT_PWM, 0);
+      digitalWrite(AIN1, LOW);
+      digitalWrite(AIN2, LOW);
     } else {
       int speed = constrain(map(abs(leftY), DEADZONE, 127, 0, 255), 0, 255);
-      if (leftY > 0) { 
-        analogWrite(AIN1, speed); 
-        analogWrite(AIN2, 0); 
-      } else { 
-        analogWrite(AIN1, 0); 
-        analogWrite(AIN2, speed); 
-      }
+      digitalWrite(AIN1, leftY > 0 ? HIGH : LOW);
+      digitalWrite(AIN2, leftY > 0 ? LOW : HIGH);
+      analogWrite(LEFT_PWM, speed);
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS); 
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
