@@ -8,23 +8,27 @@ bool r1Pressed = false;
 bool l1Pressed = false;
 bool isConnected = false;
 
-const int STBY = 22; 
+const int STBY1 = 32;  // TB6612FNG (1) - wheel motors
+const int STBY2 = 33;  // TB6612FNG (2) - gripper motor
 
 void setup() {
   Serial.begin(115200);
 
   // 1. Immediately ensure the driver is ASLEEP on boot
-  pinMode(STBY, OUTPUT);
-  digitalWrite(STBY, LOW);
+  pinMode(STBY1, OUTPUT);
+  pinMode(STBY2, OUTPUT);
+  digitalWrite(STBY1, LOW);
+  digitalWrite(STBY2, LOW);
 
   // 2. Initialize all motor pins to 0 (This runs the code in your other tabs)
   setupLeftMotor();
   setupRightMotor();
-  setupLiftMotor();
+  setupGripperMotor();
   setupMastServo();
 
   // 3. Now that the pins are safely at 0, WAKE UP the drivers
-  digitalWrite(STBY, HIGH);
+  digitalWrite(STBY1, HIGH);
+  digitalWrite(STBY2, HIGH);
 
   // 4. Initialize Bluetooth (INSERT MAC ADDRESS)
   PS4.begin("4C:B9:9B:3A:43:B5"); 
@@ -33,7 +37,7 @@ void setup() {
   // Create 4 independent, concurrent tasks
   xTaskCreatePinnedToCore(LeftMotorTask, "LeftTask", 2048, NULL, 1, NULL, 1);
   xTaskCreatePinnedToCore(RightMotorTask, "RightTask", 2048, NULL, 1, NULL, 1);
-  xTaskCreatePinnedToCore(LiftMotorTask, "LiftTask", 2048, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(GripperMotorTask, "GripperTask", 2048, NULL, 1, NULL, 1);
   xTaskCreatePinnedToCore(MastServoTask, "ServoTask", 2048, NULL, 1, NULL, 0);
 }
 
