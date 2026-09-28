@@ -1,28 +1,47 @@
 Servo mastServo;
 const int SERVO_PIN = 23;
-int servoAngle = 90;
+
+// 5-turn dual mode servo (1800°): 500 µs = 0°, 2500 µs = 1800° (in servo mode)
+const int SERVO_MIN_US = 500;
+const int SERVO_MAX_US = 2500;
+const int SERVO_MAX_DEG = 1800;
+
+// Degrees moved per 15 ms tick while a button is held (10 = ~667°/s)
+const int SERVO_STEP_DEG = 10;
+
+int servoAngle = 900;  // mid-range (2.5 turns)
+
+void writeMastServo(int angleDeg) {
+  angleDeg = constrain(angleDeg, 0, SERVO_MAX_DEG);
+  int pulseUs = map(angleDeg, 0, SERVO_MAX_DEG, SERVO_MIN_US, SERVO_MAX_US);
+  mastServo.writeMicroseconds(pulseUs);
+}
 
 void setupMastServo() {
   ESP32PWM::allocateTimer(0);
   mastServo.setPeriodHertz(50);
-  mastServo.attach(SERVO_PIN, 500, 2400);
-  mastServo.write(servoAngle);
+  mastServo.attach(SERVO_PIN, SERVO_MIN_US, SERVO_MAX_US);
+  writeMastServo(servoAngle);
 }
 
 void MastServoTask(void *pvParameters) {
   for (;;) {
     if (isConnected) {
+      bool changed = false;
+
       if (r1Pressed) {
-        servoAngle += 2;
-        if (servoAngle > 180) servoAngle = 180;
-        mastServo.write(servoAngle);
+        servoAngle += SERVO_STEP_DEG;
+        if (servoAngle > SERVO_MAX_DEG) servoAngle = SERVO_MAX_DEG;
+        changed = true;
       }
       if (l1Pressed) {
-        servoAngle -= 2;
+        servoAngle -= SERVO_STEP_DEG;
         if (servoAngle < 0) servoAngle = 0;
-        mastServo.write(servoAngle);
+        changed = true;
       }
+
+      if (changed) writeMastServo(servoAngle);
     }
-    vTaskDelay(15 / portTICK_PERIOD_MS); 
+    vTaskDelay(15 / portTICK_PERIOD_MS);
   }
 }
