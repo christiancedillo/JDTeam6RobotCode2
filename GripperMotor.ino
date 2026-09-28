@@ -1,3 +1,4 @@
+//GripperMotor file "GripperMotor.ino"
 // TB6612FNG (2), channel A -> RackAPMotor
 const int CIN1 = 22;      // AIN1 -> D22
 const int CIN2 = 21;      // AIN2 -> D21
