@@ -1,30 +1,30 @@
-const int BIN1 = 5;
-const int BIN2 = 18;
-// Reusing the same deadzone value logic, defining locally for this tab
+// TB6612FNG (1), channel B -> Wheel2Motor
+const int BIN1 = 26;       // D26
+const int BIN2 = 25;       // D25
+const int RIGHT_PWM = 13;  // PWMB -> D13
 const int R_DEADZONE = 15;
 
 void setupRightMotor() {
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
-  analogWrite(BIN1, 0); 
-  analogWrite(BIN2, 0);
+  pinMode(RIGHT_PWM, OUTPUT);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, LOW);
+  analogWrite(RIGHT_PWM, 0);
 }
 
 void RightMotorTask(void *pvParameters) {
-  for (;;) { 
+  for (;;) {
     if (!isConnected || abs(rightY) < R_DEADZONE) {
-      analogWrite(BIN1, 0); 
-      analogWrite(BIN2, 0);
+      analogWrite(RIGHT_PWM, 0);
+      digitalWrite(BIN1, LOW);
+      digitalWrite(BIN2, LOW);
     } else {
       int speed = constrain(map(abs(rightY), R_DEADZONE, 127, 0, 255), 0, 255);
-      if (rightY > 0) { 
-        analogWrite(BIN1, speed); 
-        analogWrite(BIN2, 0); 
-      } else { 
-        analogWrite(BIN1, 0); 
-        analogWrite(BIN2, speed); 
-      }
+      digitalWrite(BIN1, rightY > 0 ? HIGH : LOW);
+      digitalWrite(BIN2, rightY > 0 ? LOW : HIGH);
+      analogWrite(RIGHT_PWM, speed);
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS); 
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
