@@ -1,3 +1,4 @@
+//RightMotor.ino file
 // TB6612FNG (1), channel B -> Wheel2Motor
 const int BIN1 = 26;       // D26
 const int BIN2 = 25;       // D25
