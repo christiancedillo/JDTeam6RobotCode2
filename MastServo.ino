@@ -9,7 +9,15 @@ const int SERVO_MAX_DEG = 1800;
 // Degrees moved per 15 ms tick while a button is held (10 = ~667°/s)
 const int SERVO_STEP_DEG = 10;
 
+// Stop sending pulses after the mast has been idle this long, so the servo
+// isn't drawing holding current. Set SERVO_DETACH_WHEN_IDLE to false if the
+// mast sags without holding torque.
+const bool SERVO_DETACH_WHEN_IDLE = true;
+const unsigned long SERVO_IDLE_TIMEOUT_MS = 1000;
+
 int servoAngle = 900;  // mid-range (2.5 turns)
+bool servoAttached = false;
+unsigned long servoLastActiveMs = 0;
 
 void writeMastServo(int angleDeg) {
   angleDeg = constrain(angleDeg, 0, SERVO_MAX_DEG);
@@ -17,31 +25,59 @@ void writeMastServo(int angleDeg) {
   mastServo.writeMicroseconds(pulseUs);
 }
 
-void setupMastServo() {
-  ESP32PWM::allocateTimer(0);
+void attachMastServo() {
+  if (servoAttached) return;
   mastServo.setPeriodHertz(50);
   mastServo.attach(SERVO_PIN, SERVO_MIN_US, SERVO_MAX_US);
-  writeMastServo(servoAngle);
+  writeMastServo(servoAngle);  // resume at the last commanded position
+  servoAttached = true;
+  servoLastActiveMs = millis();
+}
+
+void detachMastServo() {
+  if (!servoAttached) return;
+  mastServo.detach();
+  pinMode(SERVO_PIN, OUTPUT);
+  digitalWrite(SERVO_PIN, LOW);  // no pulses on the signal line
+  servoAttached = false;
+}
+
+void setupMastServo() {
+  ESP32PWM::allocateTimer(0);
+  attachMastServo();
 }
 
 void MastServoTask(void *pvParameters) {
   for (;;) {
-    if (isConnected) {
-      bool changed = false;
+    bool moving = false;
 
+    if (!estop && isConnected) {
       if (r1Pressed) {
         servoAngle += SERVO_STEP_DEG;
         if (servoAngle > SERVO_MAX_DEG) servoAngle = SERVO_MAX_DEG;
-        changed = true;
+        moving = true;
       }
       if (l1Pressed) {
         servoAngle -= SERVO_STEP_DEG;
         if (servoAngle < 0) servoAngle = 0;
-        changed = true;
+        moving = true;
       }
-
-      if (changed) writeMastServo(servoAngle);
     }
+
+    if (estop) {
+      detachMastServo();
+    } else if (moving) {
+      attachMastServo();  // no-op if already attached
+      writeMastServo(servoAngle);
+      servoLastActiveMs = millis();
+    } else if (SERVO_DETACH_WHEN_IDLE) {
+      if (servoAttached && millis() - servoLastActiveMs > SERVO_IDLE_TIMEOUT_MS) {
+        detachMastServo();
+      }
+    } else {
+      attachMastServo();  // keep holding; also re-attaches after an e-stop
+    }
+
     vTaskDelay(15 / portTICK_PERIOD_MS);
   }
 }
