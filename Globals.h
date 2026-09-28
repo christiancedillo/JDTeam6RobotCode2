@@ -12,4 +12,7 @@ extern bool r1Pressed;
 extern bool l1Pressed;
 extern bool isConnected;
 
+// Set by the Options button. While true, every motor is forced off.
+extern volatile bool estop;
+
 #endif
